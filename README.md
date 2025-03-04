@@ -1,4 +1,4 @@
-# refactored-octo-parakeet
+# Python MCP Client
 
 start by running:
 ```
