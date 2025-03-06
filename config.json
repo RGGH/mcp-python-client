@@ -21,11 +21,10 @@
       "env": null
     },
     {
-     "name":"fetch", 
-    "command": "docker",
-    "args": ["run", "-i", "--rm", "mcp/fetch"],
-    "env":null
-}
+      "name": "fetch", 
+      "command": "docker",
+      "args": ["run", "-i", "--rm", "mcp/fetch"],
+      "env": null
+    }
   ]
 }
-

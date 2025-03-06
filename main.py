@@ -36,11 +36,13 @@ class MCPClient:
             await self._client.__aexit__(exc_type, exc_val, exc_tb)
 
     async def connect(self):
+        print(f"Connecting to MCP server: {self.server_params.command} {' '.join(self.server_params.args) if self.server_params.args else ''}")
         self._client = stdio_client(self.server_params)
         self.read, self.write = await self._client.__aenter__()
         session = ClientSession(self.read, self.write)
         self.session = await session.__aenter__()
         await self.session.initialize()
+        print(f"Successfully connected to MCP server")
 
     async def get_available_tools(self):
         if not self.session:
@@ -52,6 +54,7 @@ class MCPClient:
             raise RuntimeError("Not connected to MCP server")
         
         async def callable(*args, **kwargs):
+            print(f"Calling tool: {tool_name} with args: {kwargs}")
             response = await self.session.call_tool(tool_name, arguments=kwargs)
             return response.content[0].text
 
@@ -90,10 +93,14 @@ async def agent_loop(query: str, tools: dict, messages: List[dict] = None):
 
 async def main():
     try:
+        print("Starting MCP client...")
+        print(f"Config: {json.dumps(config, indent=2)}")
+        
         mcp_clients = []
         tools = {}
 
         for server in config["mcp_servers"]:
+            print(f"Setting up server: {server['name']}")
             server_params = StdioServerParameters(
                 command=server["command"],
                 args=server["args"],
@@ -103,6 +110,7 @@ async def main():
             mcp_clients.append(client)
             async with client as mcp_client:
                 tools_data = await mcp_client.get_available_tools()
+                print(f"Retrieved tools from {server['name']}: {tools_data}")
                 
                 if isinstance(tools_data, tuple) and len(tools_data) >= 2:
                     for tool in tools_data[1]:
@@ -119,6 +127,8 @@ async def main():
                             },
                         }
         
+        print(f"Available tools: {', '.join(tools.keys())}")
+        
         messages = None
         while True:
             try:
@@ -134,6 +144,8 @@ async def main():
                 print(f"\nError in prompt loop: {e}")
     except Exception as e:
         print(f"\nError in main function: {e}")
+        import traceback
+        traceback.print_exc()
 
 if __name__ == "__main__":
     asyncio.run(main())
